@@ -29,8 +29,8 @@
         
       <!-- review section -->
 
-      <section class="review-section">
-        <div class="container">
+      <section class="review-section" id="review">
+        <div class="container slider">
           <div class="review-text-blk">
             <h3 class="review-h">
               <span class="review-span">Yacht Adventures </span>take pride in providing the best
@@ -114,6 +114,8 @@
           
 
           <!-- review card list -->
+          <div class="slider-wrapper" id="sliderWrapper">
+          <div class="swiper-container">
           <ul class="review-card-list">
             <li class="review-card-item">
               <img 
@@ -158,10 +160,12 @@
             </li>
           </ul>
           <div class="indicator">
-            <span class="point active"></span>
+            <span class="point"></span>
             <span class="point"></span>
             <span class="point"></span>
           </div>
+          </div>
+          
         </div>
       </section>
     </main>
@@ -183,20 +187,129 @@
 
 
 
-<script src="./js/review-slider.js"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    const cards = document.querySelectorAll(".review-card-item");
+    const cardCount = cards.length;
+    const points = document.querySelectorAll(".point");
+    let currentIndex = 0;
+    let sliderVisible = false;
+    let sliderWrapper = document.querySelector("#sliderWrapper");
+    let lastManualScrollTime = 0; // Variable to store the timestamp of the last manual scroll
 
+    function showNextCard() {
+      cards[currentIndex].scrollIntoView({ behavior: "smooth", inline: "start" });
+      updateActiveIndicator();
+      currentIndex = (currentIndex + 1) % cardCount;
+    }
 
+    const cardShowInterval = 4000; // 5 seconds delay between each card appearance
+    let sliderInterval = null;
 
+    function startSlider() {
+      sliderVisible = true;
+      sliderInterval = setInterval(showNextCard, cardShowInterval);
+    }
 
+    function stopSlider() {
+      sliderVisible = false;
+      clearInterval(sliderInterval);
+    }
 
+    // Function to check if the slider is fully visible
+    function isSliderFullyVisible() {
+      const rect = sliderWrapper.getBoundingClientRect();
+      return rect.top >= 0 && rect.bottom <= (window.innerHeight || document.documentElement.clientHeight);
+    }
 
+    // Function to handle slider visibility changes
+    function handleSliderVisibility(entries) {
+      if (entries[0].isIntersecting) {
+        if (!sliderVisible) {
+          startSlider();
+        }
+      } else {
+        stopSlider();
+      }
+    }
 
+    // IntersectionObserver to observe slider visibility changes
+    const observer = new IntersectionObserver(handleSliderVisibility, { threshold: 1 });
+    observer.observe(sliderWrapper);
 
+    // Function to update active indicator based on the current visible slide
+    function updateActiveIndicator() {
+      points.forEach((point, index) => {
+        point.classList.toggle("active", index === currentIndex);
+      });
+    }
 
+    // Listen for window scroll and resize events to handle slider visibility changes
+    window.addEventListener("scroll", () => {
+      handleSliderVisibility([{ isIntersecting: isSliderFullyVisible() }]);
+    });
 
+    window.addEventListener("resize", () => {
+      handleSliderVisibility([{ isIntersecting: isSliderFullyVisible() }]);
+    });
 
+    // Variable to keep track of manual scrolling
+    let isScrollingManually = false;
 
+    // Throttle function to control the manual scrolling speed
+    function throttle(func, limit) {
+      let inThrottle;
+      return function() {
+        if (!inThrottle) {
+          func.apply(this, arguments);
+          inThrottle = true;
+          setTimeout(() => (inThrottle = false), limit);
+        }
+      };
+    }
 
+    // Add wheel event listener to the slider container to handle manual scrolling with mouse wheel
+    sliderWrapper.addEventListener(
+      "wheel",
+      throttle(function(event) {
+        event.preventDefault();
+        if (!isScrollingManually) {
+          isScrollingManually = true;
+          const scrollOptions = { behavior: "auto", inline: "start" };
+          if ("scrollBehavior" in document.documentElement.style) {
+            // Scroll behavior is supported
+            scrollOptions.behavior = "smooth";
+          }
+
+          if (event.deltaY < 0) {
+            // Scrolling up
+            currentIndex = (currentIndex - 1 + cardCount) % cardCount;
+          } else {
+            // Scrolling down
+            currentIndex = (currentIndex + 1) % cardCount;
+          }
+          updateActiveIndicator();
+          cards[currentIndex].scrollIntoView(scrollOptions);
+
+          // Reset the manual scrolling flag after a short delay
+          setTimeout(() => {
+            isScrollingManually = false;
+            // Update the last manual scroll time
+            lastManualScrollTime = Date.now();
+            // Check if enough time has passed since the last manual scroll before starting the slider again
+            if (Date.now() - lastManualScrollTime >= 4000) {
+              startSlider();
+            }
+          }, 2000); // Increase the timeout value for a longer swipe threshold
+        }
+      }, 000) // Increase the throttle limit for a longer swipe threshold
+    );
+
+    // Initial check to start the slider if it's visible on page load
+    handleSliderVisibility([{ isIntersecting: isSliderFullyVisible() }]);
+    updateActiveIndicator();
+  });
+</script>
 
 
 

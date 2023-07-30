@@ -288,3 +288,7 @@ ol {
         display: none;
     }
 }
+
+.swiper-container {
+    overflow: hidden;
+}
